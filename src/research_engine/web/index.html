@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="research-token" content="__TOKEN__">
+<meta name="color-scheme" content="light">
+<title>Research Engine</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #1c2b35;
+  --muted: #65747c;
+  --line: #dce5e2;
+  --paper: #ffffff;
+  --canvas: #f2f6f3;
+  --green: #176b55;
+  --green-dark: #105341;
+  --green-soft: #e9f4ef;
+  --gold: #b97927;
+  --gold-soft: #fbf3e5;
+  --red: #a54237;
+  --red-soft: #fbefed;
+  --shadow: 0 18px 50px rgba(31, 60, 50, .07);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* { box-sizing: border-box; }
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--ink);
+  background: radial-gradient(ellipse at 85% 0%, #e2f0e8 0, transparent 33rem), var(--canvas);
+  line-height: 1.5;
+}
+button, input, select, textarea { font: inherit; }
+button, select, input[type="checkbox"] { cursor: pointer; }
+button, input, select, textarea { color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid #79bda5;
+  outline-offset: 3px;
+}
+button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: .6rem .9rem;
+  background: white;
+  color: var(--ink);
+  font-weight: 650;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+button:hover:not(:disabled) { border-color: #aac7ba; background: #f7fbf8; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { cursor: not-allowed; opacity: .52; }
+button.primary { border-color: var(--green); background: var(--green); color: white; }
+button.primary:hover:not(:disabled) { border-color: var(--green-dark); background: var(--green-dark); }
+button.quiet { min-height: 36px; padding: .4rem .65rem; font-size: .9rem; }
+input:not([type="checkbox"]), select, textarea {
+  width: 100%;
+  border: 1px solid #cad7d2;
+  border-radius: 9px;
+  padding: .68rem .75rem;
+  background: #fff;
+}
+input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--green); }
+textarea { min-height: 136px; resize: vertical; font: 500 .98rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+label { display: grid; gap: .4rem; color: #475a61; font-size: .91rem; font-weight: 650; }
+label.check-label { display: flex; align-items: center; gap: .55rem; font-weight: 550; }
+a { color: var(--green); }
+.shell { width: min(1260px, calc(100% - 48px)); margin: 0 auto; padding: 32px 0 60px; }
+.masthead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 25px; }
+.brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.brand-mark { display: grid; width: 44px; height: 44px; place-items: center; flex: 0 0 auto; border-radius: 14px; background: var(--green); color: white; font-size: 1.25rem; font-weight: 800; letter-spacing: -.08em; }
+.brand-name { margin: 0; font-size: .92rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.brand-caption { margin: 1px 0 0; color: var(--muted); font-size: .85rem; }
+.top-status { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid var(--line); border-radius: 999px; padding: .45rem .72rem; background: rgba(255,255,255,.76); color: var(--muted); font-size: .82rem; font-weight: 650; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3c9977; box-shadow: 0 0 0 3px #e2f2ea; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, .7fr); gap: 2rem; align-items: end; margin: 0 0 25px; }
+.eyebrow { margin: 0 0 .45rem; color: var(--green); font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+h1 { max-width: 740px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.3rem, 5vw, 4.2rem); font-weight: 500; letter-spacing: -.055em; line-height: 1.04; }
+.hero-copy { max-width: 660px; margin: 1rem 0 0; color: var(--muted); font-size: 1.02rem; }
+.monitor-card { display: flex; flex-direction: column; gap: .45rem; border: 1px solid #cfe1d7; border-radius: 15px; padding: 1rem 1.1rem; background: rgba(255,255,255,.72); }
+.monitor-label { color: var(--muted); font-size: .76rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.monitor-state { display: flex; align-items: center; gap: .5rem; font-weight: 750; }
+.monitor-note { color: var(--muted); font-size: .85rem; }
+.notice { display: none; margin: 0 0 17px; border-radius: 11px; padding: .8rem 1rem; }
+.notice.visible { display: block; }
+.notice.error { border: 1px solid #e9c4be; background: var(--red-soft); color: #82342d; }
+.notice.success { border: 1px solid #cce4d6; background: var(--green-soft); color: #1b644c; }
+.notice.info { border: 1px solid #d5e0dd; background: #f7faf8; color: var(--muted); }
+.layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 18px; align-items: start; }
+.column { display: grid; gap: 18px; min-width: 0; }
+.card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: var(--shadow); }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 20px 22px 0; }
+.card-head h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.02em; }
+.card-head p { max-width: 580px; margin: .35rem 0 0; color: var(--muted); font-size: .87rem; }
+.card-body { padding: 18px 22px 22px; }
+.number { display: inline-grid; width: 27px; height: 27px; place-items: center; margin-right: .48rem; border-radius: 9px; background: var(--green-soft); color: var(--green); font-size: .78rem; font-weight: 800; vertical-align: 1px; }
+.field-stack { display: grid; gap: 14px; }
+.field-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+.field-row > button { white-space: nowrap; }
+.rule { height: 1px; margin: 20px 0; background: var(--line); }
+.hint { margin: .45rem 0 0; color: var(--muted); font-size: .82rem; }
+.operator-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 0; }
+.operator-row button { min-height: 32px; padding: .25rem .6rem; border-radius: 7px; color: var(--green-dark); font-size: .8rem; }
+.source-box { margin: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px 13px; }
+.source-box legend { padding: 0 .35rem; color: #40555b; font-size: .87rem; font-weight: 700; }
+.source-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.source-option { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 9px; padding: .45rem .65rem; background: #fbfdfb; color: #3b5257; font-size: .86rem; }
+.source-option:has(input:checked) { border-color: #a6cbb9; background: var(--green-soft); color: var(--green-dark); }
+.preview { margin-top: 16px; border: 1px solid #d9e6df; border-radius: 12px; background: #f7faf8; }
+.preview-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 12px 14px; border-bottom: 1px solid #e2ebe6; }
+.preview-top strong { display: block; font-size: .89rem; }
+.preview-top p { margin: .18rem 0 0; color: var(--muted); font-size: .82rem; }
+.preview-state { flex: 0 0 auto; border-radius: 999px; padding: .22rem .5rem; background: #e9eeeb; color: #54635f; font-size: .73rem; font-weight: 750; }
+.preview-state.ready { background: #e0f2e8; color: #176747; }
+.preview-state.bad { background: #f9e7e3; color: #923c33; }
+.preview-content { padding: 12px 14px; }
+.normalized { margin: 0; color: #465952; font: 500 .82rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.translation-list { display: grid; gap: 8px; margin-top: 11px; }
+.translation { display: grid; grid-template-columns: minmax(92px, .32fr) minmax(0, 1fr); gap: 10px; align-items: start; border-top: 1px solid #e5ece8; padding-top: 8px; }
+.translation-source { color: var(--green-dark); font-size: .81rem; font-weight: 750; }
+.translation-query { color: #465952; font: .79rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.translation-note { grid-column: 2; margin-top: -6px; color: #755223; font-size: .78rem; }
+.mode { display: inline-block; margin-left: .35rem; border-radius: 999px; padding: .13rem .42rem; background: #e5eee9; color: #45635a; font: 700 .66rem/1.4 ui-sans-serif, system-ui, sans-serif; letter-spacing: .025em; text-transform: uppercase; vertical-align: 1px; }
+.form-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; }
+.form-actions .hint { margin: 0; }
+.saved-query-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 10px; align-items: end; }
+.saved-query-row label { min-width: 0; }
+.select-note { margin: .45rem 0 0; color: var(--muted); font-size: .82rem; }
+.run-controls { display: grid; grid-template-columns: minmax(100px, .45fr) auto; gap: 10px; align-items: end; margin-top: 16px; }
+.run-controls label { max-width: 200px; }
+.schedule { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, .6fr) auto; gap: 12px; align-items: end; }
+.schedule-flag { align-self: center; }
+.schedule-note { margin: 10px 0 0; color: var(--muted); font-size: .82rem; }
+.section-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.section-bar h2 { margin: 0; font-size: 1.08rem; }
+.section-bar p { margin: .25rem 0 0; color: var(--muted); font-size: .84rem; }
+.section-bar button { flex: 0 0 auto; }
+.wide-card .card-body { padding-top: 17px; }
+.job-list, .paper-list, .record-list { display: grid; gap: 10px; }
+.job-list { max-height: 100vh; overflow-y: auto; min-width: 0; scrollbar-gutter: stable; }
+.job-list .job { min-width: 0; overflow-wrap: anywhere; }
+.job, .paper, .record { border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; background: #fff; }
+.job-top, .paper-top, .record-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.job-title, .paper-title, .record-title { margin: 0; font-weight: 750; }
+.paper-title { color: var(--green-dark); text-align: left; }
+.paper-title:hover { text-decoration: underline; }
+.meta-line { display: flex; flex-wrap: wrap; gap: 6px 13px; margin-top: 6px; color: var(--muted); font-size: .81rem; }
+.pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .23rem .55rem; background: #eef2f0; color: #53645e; font-size: .72rem; font-weight: 750; text-transform: capitalize; }
+.pill.running { background: var(--gold-soft); color: #865517; }
+.pill.completed, .pill.success { background: var(--green-soft); color: #1b644c; }
+.pill.failed, .pill.error { background: var(--red-soft); color: #923c33; }
+.job-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.job-source { border-left: 2px solid #c8dbd2; padding-left: 9px; color: #53645e; font-size: .8rem; }
+.empty-state { border: 1px dashed #cad8d2; border-radius: 11px; padding: 18px; color: var(--muted); text-align: center; font-size: .88rem; }
+.empty-state strong { display: block; margin-bottom: 3px; color: #42554f; }
+.paper-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.paper { min-width: 0; }
+.paper-title { display: inline; border: 0; padding: 0; background: transparent; font-size: .97rem; line-height: 1.38; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.tag { border-radius: 999px; padding: .18rem .48rem; background: #eff3f1; color: #5c6b66; font-size: .72rem; }
+.paper-detail { margin-top: 13px; border: 1px solid #cfded6; border-radius: 14px; padding: 15px; background: #f8fbf9; }
+.paper-detail[hidden] { display: none; }
+.detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.detail-head h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; font-weight: 500; line-height: 1.25; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin: 16px 0 0; }
+.detail-field { min-width: 0; }
+.detail-field.wide { grid-column: 1 / -1; }
+.detail-field dt { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.detail-field dd { margin: 3px 0 0; color: #344a47; font-size: .88rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-field.abstract dd { max-height: 230px; overflow: auto; }
+.detail-link { display: inline-block; margin-top: 12px; font-size: .86rem; font-weight: 700; }
+.history-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.history-group { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fbfdfb; }
+.history-group h3 { margin: 0 0 10px; font-size: .86rem; }
+.history-group .record-list { gap: 7px; }
+.history-group .record { padding: 9px 10px; background: white; }
+.history-group .meta-line { gap: 4px 9px; font-size: .74rem; }
+.history-empty { color: var(--muted); font-size: .78rem; }
+details { border-top: 1px solid var(--line); margin-top: 13px; padding-top: 11px; }
+summary { color: #4b5f59; cursor: pointer; font-size: .84rem; font-weight: 700; }
+pre { max-height: 300px; overflow: auto; margin: 10px 0 0; border-radius: 9px; padding: 12px; background: #f3f6f4; color: #41524d; font: .75rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.footer-note { margin: 18px 3px 0; color: var(--muted); font-size: .78rem; }
+.masthead { flex-wrap: wrap; }
+.guide-content { max-width: 78ch; color: var(--ink); line-height: 1.7; font-size: .9rem; }
+.guide-content h3 { margin: 24px 0 8px; font-size: 1rem; }
+.guide-content li { margin: 8px 0; }
+.guide-content code { overflow-wrap: anywhere; }
+.guide-content pre { max-height: none; }
+.guide-content a { color: var(--green); text-decoration: underline; }
+.masthead > a { color: var(--green); font-size: .9rem; font-weight: 700; }
+#help-guide { scroll-margin-top: 20px; }
+#help-guide summary { font-size: 1rem; padding: 6px 0; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: minmax(0,1.4fr) minmax(220px,.7fr); }
+}
+@media (max-width: 620px) {
+  .shell { width: min(100% - 28px, 560px); padding-top: 18px; }
+  .masthead { align-items: flex-start; }
+  .top-status { padding: .4rem .55rem; font-size: .72rem; }
+  .hero { grid-template-columns: 1fr; gap: 16px; }
+  h1 { font-size: clamp(2.25rem, 12vw, 3.35rem); }
+  .card-head { padding: 17px 16px 0; }
+  .card-body { padding: 15px 16px 18px; }
+  .field-row, .saved-query-row, .run-controls, .schedule { grid-template-columns: 1fr; }
+  .field-row > button, .saved-query-row > button, .schedule > button { width: 100%; }
+  .paper-list, .history-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-field.wide { grid-column: auto; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="masthead">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">R<span style="font-size:.64em">/</span>E</div>
+      <div><p class="brand-name">Research Engine</p><p class="brand-caption">Literature workspace</p></div>
+    </div>
+    <a class="quiet" href="#help-guide">Help / Guide</a>
+    <div class="top-status"><span class="status-dot" aria-hidden="true"></span><span id="connection-label">Connecting to local workspace</span></div>
+  </header>
+
+  <section class="hero" aria-labelledby="page-title">
+    <div>
+      <p class="eyebrow">Search · organize · monitor</p>
+      <h1 id="page-title">A clearer view of the evidence.</h1>
+      <p class="hero-copy">Build precise searches across literature sources, keep useful papers together, and see exactly how every search ran.</p>
+    </div>
+    <aside class="monitor-card" aria-live="polite">
+      <span class="monitor-label">Scheduled monitoring</span>
+      <span class="monitor-state"><span class="status-dot" id="monitor-dot" aria-hidden="true"></span><span id="monitor-state">Loading status…</span></span>
+      <span class="monitor-note" id="monitor-note">Checking workspace settings</span>
+    </aside>
+  </section>
+
+  <p id="message" class="notice" role="status" aria-live="polite"></p>
+
+  <div class="layout">
+    <div class="column">
+      <section class="card" aria-labelledby="workspace-heading">
+        <div class="card-head"><div><h2 id="workspace-heading"><span class="number">01</span>Workspace</h2><p>Keep searches and saved papers organized by project.</p></div></div>
+        <div class="card-body">
+          <div class="field-stack">
+            <label for="project">Current project<select id="project" aria-label="Current project"></select></label>
+            <form id="project-form" class="field-row">
+              <label for="project-name">Create a project<input id="project-name" required maxlength="200" placeholder="e.g. Long COVID evidence review"></label>
+              <button class="primary" type="submit">Create project</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sheet-heading">
+        <div class="card-head"><div><h2 id="sheet-heading">Google Sheets sync</h2><p>Keep this project's papers in a separate app-managed tab of a Sheet you own.</p></div></div>
+        <div class="card-body">
+          <form id="sheet-form" class="field-stack">
+            <label for="sheet-url">Google Sheet URL or ID<input id="sheet-url" type="text" required maxlength="500" placeholder="https://docs.google.com/spreadsheets/d/…"></label>
+            <label class="check-label" for="sheet-auto"><input id="sheet-auto" type="checkbox" checked>Sync after scheduled searches</label>
+            <div class="form-actions"><p class="hint">Share the Sheet with your service-account email as Editor. Set <code>RESEARCH_ENGINE_GOOGLE_SERVICE_ACCOUNT_FILE</code> on the server; the key is never uploaded here.</p><button id="save-sheet" type="submit">Save connection</button></div>
+          </form>
+          <div class="rule"></div>
+          <p id="sheet-status" class="hint" role="status">Select a project to view its Sheet status.</p>
+          <button id="sync-sheet" class="quiet" type="button" disabled>Sync now</button>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="query-heading">
+        <div class="card-head"><div><h2 id="query-heading"><span class="number">02</span>Search expression</h2><p>Combine concepts with Boolean logic. The server checks syntax and shows each source’s interpretation.</p></div></div>
+        <div class="card-body">
+          <form id="query-form" novalidate>
+            <div class="field-stack">
+              <label for="expression">Expression<textarea id="expression" maxlength="5000" spellcheck="false" placeholder='("long COVID" OR "post-acute sequelae") AND (rehabilitation OR treatment) NOT pediatric'></textarea></label>
+              <div class="operator-row" aria-label="Insert Boolean operator">
+                <button type="button" data-insert=" AND ">AND</button><button type="button" data-insert=" OR ">OR</button><button type="button" data-insert=" NOT ">NOT</button><button type="button" data-insert="(">(</button><button type="button" data-insert=")">)</button><button type="button" data-insert='""'>“ ”</button>
+              </div>
+              <p class="hint">Use quotes for phrases, parentheses to group terms, and <strong>AND</strong>, <strong>OR</strong>, or <strong>NOT</strong> (operators are case-insensitive). Adjacent terms imply AND; precedence is NOT, then AND, then OR. Example: <code>(asthma OR wheeze) AND "air pollution" NOT pediatric</code></p>
+              <fieldset id="sources" class="source-box"><legend>Search sources</legend><div class="source-grid" id="source-options"><span class="hint">Loading available sources…</span></div><p class="hint">Select at least one source. New searches start with the workspace’s discovery defaults.</p></fieldset>
+            </div>
+            <section class="preview" aria-labelledby="preview-heading" aria-live="polite">
+              <div class="preview-top"><div><strong id="preview-heading">Expression preview</strong><p id="preview-help">Enter an expression to check how it will run.</p></div><span id="preview-state" class="preview-state">Waiting</span></div>
+              <div id="preview-content" class="preview-content"><p class="hint" style="margin:0">The preview is validated by the search service.</p></div>
+            </section>
+            <div class="form-actions"><p id="save-context" class="hint">Saved searches are created in the current project.</p><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button id="cancel-edit" class="quiet" type="button" hidden>Cancel edit</button><button class="primary" id="save-query" type="submit" disabled>Save as new query</button></div></div>
+          </form>
+
+          <div class="rule"></div>
+          <div class="saved-query-row">
+            <label for="query">Saved query<select id="query" aria-label="Saved query"></select></label>
+            <button id="edit-query" class="quiet" type="button" disabled>Edit query</button>
+            <button id="search" class="primary" type="button" disabled>Run search</button>
+          </div>
+          <p id="query-selection-note" class="select-note">Choose a saved query to run it or load it into the expression editor.</p>
+          <div class="run-controls">
+            <label for="pages">Pages per source<input id="pages" type="number" value="1" min="1" max="100"></label>
+            <p class="hint">A bounded run may be partial. Provider limits and changing indexes can affect coverage.</p>
+          </div>
+          <div class="rule"></div>
+          <form id="schedule-form">
+            <div class="schedule">
+              <label class="check-label schedule-flag" for="enabled"><input id="enabled" type="checkbox">Enable schedule</label>
+              <label for="interval">Interval in minutes<input id="interval" type="number" value="60" min="1" max="43200"></label>
+              <button type="submit" id="save-schedule">Save schedule</button>
+            </div>
+            <p class="schedule-note">Scheduled runs fetch from the selected query's sources. Default: 60 minutes (1 hour); existing schedules keep their saved interval.</p>
+          </form>
+          <div class="form-actions"><p class="hint">Due work follows the configured schedules.</p><button id="due" class="quiet" type="button" disabled>Run due schedules now</button></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="column">
+      <section class="card" aria-labelledby="jobs-heading">
+        <div class="card-head"><div><h2 id="jobs-heading">Recent activity</h2><p>Updates every minute. Use Refresh now for the latest results.</p></div><span id="job-count" class="pill">0 jobs</span></div>
+        <div class="card-body"><div id="jobs" class="job-list" role="region" aria-labelledby="jobs-heading" tabindex="0"><div class="empty-state"><strong>Connecting</strong>Loading recent activity…</div></div></div>
+      </section>
+
+      <section class="card" aria-labelledby="papers-heading">
+        <div class="card-head"><div><h2 id="papers-heading">Paper library</h2><p>Select a paper to inspect its metadata and provenance.</p></div><span id="paper-count" class="pill">0 papers</span></div>
+        <div class="card-body">
+          <div id="papers" class="paper-list"><div class="empty-state"><strong>No project selected</strong>Create or choose a project to see its papers.</div></div>
+          <section id="paper-panel" class="paper-detail" aria-labelledby="detail-title" hidden>
+            <div class="detail-head"><h3 id="detail-title">Paper details</h3><button id="close-detail" class="quiet" type="button" aria-label="Close paper details">Close</button></div>
+            <dl id="detail-fields" class="detail-grid"></dl>
+            <a id="detail-link" class="detail-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open publication page ↗</a>
+            <details><summary>Metadata provenance</summary><pre id="provenance"></pre></details>
+          </section>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card wide-card" style="margin-top:18px" aria-labelledby="history-heading">
+    <div class="card-head"><div class="section-bar"><div><h2 id="history-heading">Query history &amp; monitoring</h2><p>Provider outcomes, execution attempts, scheduled runs, and saved coverage.</p></div></div><button id="refresh" class="quiet" type="button">Refresh now</button></div>
+    <div class="card-body">
+      <div id="runs"><div class="empty-state"><strong>Select a saved query</strong>Provider runs will appear here.</div></div>
+      <div class="history-grid" style="margin-top:13px">
+        <section class="history-group"><h3>Execution attempts</h3><div id="attempts" class="record-list"><p class="history-empty">Select a query to view attempts.</p></div></section>
+        <section class="history-group"><h3>Scheduled executions</h3><div id="scheduled" class="record-list"><p class="history-empty">Select a query to view scheduled runs.</p></div></section>
+        <section class="history-group"><h3>Coverage checkpoints</h3><div id="coverage" class="record-list"><p class="history-empty">Select a query to view coverage.</p></div></section>
+      </div>
+      <details><summary>Raw history records</summary><pre id="history-json">Select a query to view the records.</pre></details>
+      <p class="footer-note">Local workspace · results and provider notices reflect the most recent bounded execution.</p>
+    </div>
+  </section>
+__USER_GUIDE__
+</main>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const token = document.querySelector('meta[name="research-token"]').content;
+let workspaceStatus = null;
+let previewTimer = null;
+let previewController = null;
+let previewSequence = 0;
+let previewValid = false;
+let refreshing = false;
+let lastPaperId = null;
+let editingQueryId = null;
+
+function errorMessage(data, status) {
+  const detail = data && data.detail;
+  if (typeof detail === 'string') return detail;
+  if (detail && typeof detail.message === 'string') return detail.message;
+  if (status === 400) return 'The request could not be completed. Check the selected project and query, then try again.';
+  if (status === 404) return 'That record is no longer available. Refresh the workspace and choose it again.';
+  if (status === 409) return 'Another search or monitoring job is still running. Try again when it finishes.';
+  if (status === 422) return 'The expression could not be validated. Review the syntax and try again.';
+  return 'The workspace request failed. Please try again.';
+}
+async function api(path, method = 'GET', body, signal) {
+  const response = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Research-Token': token },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal
+  });
+  let data = {};
+  try { data = await response.json(); } catch (_) { /* Keep a readable fallback for non-JSON responses. */ }
+  if (!response.ok) {
+    const error = new Error(errorMessage(data, response.status));
+    error.status = response.status;
+    error.detail = data.detail;
+    throw error;
+  }
+  return data;
+}
+const pretty = value => JSON.stringify(value, null, 2);
+const display = value => value === null || value === undefined || value === '' ? '—' : String(value);
+function setMessage(message = '', type = 'error') {
+  const el = $('message');
+  el.textContent = message;
+  el.className = `notice${message ? ` visible ${type}` : ''}`;
+}
+async function guard(fn) {
+  try { setMessage(); await fn(); }
+  catch (error) { setMessage(error.message || 'Something went wrong. Please try again.', 'error'); }
+}
+function setOptions(el, items, label, emptyLabel) {
+  const previous = el.value;
+  el.replaceChildren();
+  if (!items.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = emptyLabel;
+    el.append(option);
+    return;
+  }
+  for (const item of items) {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = label(item);
+    el.append(option);
+  }
+  if (items.some(item => item.id === previous)) el.value = previous;
+}
+function cellText(value) { return value === null || value === undefined ? '—' : String(value); }
+function makeTable(container, headers, rows, emptyTitle, emptyCopy) {
+  container.replaceChildren();
+  if (!rows.length) {
+    container.append(emptyState(emptyTitle, emptyCopy));
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.style.overflowX = 'auto';
+  const table = document.createElement('table');
+  table.style.cssText = 'width:100%;border-collapse:collapse;font-size:.83rem;min-width:620px';
+  const head = table.createTHead().insertRow();
+  for (const heading of headers) {
+    const th = document.createElement('th');
+    th.scope = 'col'; th.textContent = heading;
+    th.style.cssText = 'padding:9px 8px;text-align:left;color:#65747c;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #dce5e2';
+    head.append(th);
+  }
+  const body = table.createTBody();
+  for (const row of rows) {
+    const tr = body.insertRow();
+    for (const value of row) {
+      const td = tr.insertCell();
+      td.textContent = cellText(value);
+      td.style.cssText = 'padding:10px 8px;text-align:left;border-bottom:1px solid #edf1ef;vertical-align:top;overflow-wrap:anywhere';
+    }
+  }
+  wrap.append(table); container.append(wrap);
+}
+function emptyState(title, copy) {
+  const element = document.createElement('div');
+  element.className = 'empty-state';
+  const strong = document.createElement('strong'); strong.textContent = title;
+  element.append(strong, document.createTextNode(copy));
+  return element;
+}
+function pill(text, modifier = '') {
+  const element = document.createElement('span');
+  element.className = `pill${modifier ? ` ${modifier}` : ''}`;
+  element.textContent = text || 'unknown';
+  return element;
+}
+function checkedProviders() {
+  return [...document.querySelectorAll('#source-options input[type="checkbox"]:checked')].map(input => input.value);
+}
+function sourceLabel(name) { return workspaceStatus?.source_labels?.[name] || name; }
+function updateSaveButton() {
+  $('save-query').disabled = !previewValid || !$('project').value || !$('expression').value.trim() || checkedProviders().length === 0;
+  $('save-query').textContent = editingQueryId ? 'Save changes' : 'Save as new query';
+  $('edit-query').disabled = !$('query').value || !!editingQueryId;
+  $('cancel-edit').hidden = !editingQueryId;
+}
+function previewStatus(label, modifier = '') {
+  const state = $('preview-state');
+  state.textContent = label;
+  state.className = `preview-state${modifier ? ` ${modifier}` : ''}`;
+}
+function resetPreview(message = 'Enter an expression to check how it will run.') {
+  $('preview-help').textContent = message;
+  $('preview-content').replaceChildren();
+  const note = document.createElement('p'); note.className = 'hint'; note.style.margin = '0';
+  note.textContent = 'The preview is validated by the search service.';
+  $('preview-content').append(note);
+  previewStatus('Waiting');
+}
+function appendTranslationRows(preview) {
+  const content = $('preview-content');
+  const normalized = document.createElement('p');
+  normalized.className = 'normalized';
+  normalized.textContent = `Normalized: ${preview.normalized_expression || $('expression').value.trim()}`;
+  content.append(normalized);
+  const providers = Array.isArray(preview.providers) ? preview.providers : [];
+  if (!providers.length) {
+    const note = document.createElement('p'); note.className = 'hint';
+    note.textContent = 'No source-specific translations were returned for the selected sources.';
+    content.append(note);
+    return;
+  }
+  const rows = document.createElement('div'); rows.className = 'translation-list';
+  for (const provider of providers) {
+    const row = document.createElement('div'); row.className = 'translation';
+    const source = document.createElement('span'); source.className = 'translation-source';
+    source.textContent = sourceLabel(provider.provider) || 'Source';
+    const query = document.createElement('span'); query.className = 'translation-query';
+    query.textContent = provider.translated_query || 'No query translation returned';
+    if (provider.execution_mode) {
+      const mode = document.createElement('span'); mode.className = 'mode'; mode.textContent = provider.execution_mode.replaceAll('_', ' ');
+      source.append(mode);
+    }
+    row.append(source, query);
+    if (provider.notice) {
+      const notice = document.createElement('span'); notice.className = 'translation-note'; notice.textContent = provider.notice;
+      row.append(notice);
+    }
+    rows.append(row);
+  }
+  content.append(rows);
+}
+function syntaxPosition(position, expression) {
+  if (!Number.isInteger(position) || position < 0) return '';
+  const before = expression.slice(0, position);
+  const lines = before.split('\n');
+  return ` at line ${lines.length}, column ${lines[lines.length - 1].length + 1}`;
+}
+function schedulePreview() {
+  previewSequence++;
+  clearTimeout(previewTimer);
+  previewValid = false;
+  updateSaveButton();
+  const expression = $('expression').value.trim();
+  if (previewController) previewController.abort();
+  if (!checkedProviders().length) {
+    resetPreview('Choose at least one source to preview and save this expression.');
+    previewStatus('Choose source');
+    updateSaveButton();
+    return;
+  }
+  if (!expression) {
+    resetPreview();
+    $('preview-help').textContent = 'Enter an expression to check how it will run.';
+    return;
+  }
+  previewStatus('Checking');
+  $('preview-help').textContent = 'Checking syntax and preparing source translations…';
+  $('preview-content').replaceChildren();
+  const loading = document.createElement('p'); loading.className = 'hint'; loading.textContent = 'Validating with the search service…';
+  $('preview-content').append(loading);
+  previewTimer = setTimeout(runPreview, 320);
+}
+async function runPreview() {
+  const expression = $('expression').value.trim();
+  if (!expression) return;
+  const sequence = previewSequence;
+  previewController = new AbortController();
+  try {
+    const data = await api('/api/queries/preview', 'POST', { expression, providers: checkedProviders() }, previewController.signal);
+    if (sequence !== previewSequence) return;
+    previewValid = data.valid === true;
+    $('preview-help').textContent = previewValid ? 'Ready to save. Source notices are shown below.' : 'Review the expression before saving.';
+    $('preview-content').replaceChildren();
+    appendTranslationRows(data);
+    previewStatus(previewValid ? 'Valid' : 'Needs attention', previewValid ? 'ready' : 'bad');
+  } catch (error) {
+    if (error.name === 'AbortError' || sequence !== previewSequence) return;
+    previewValid = false;
+    $('preview-content').replaceChildren();
+    const note = document.createElement('p'); note.className = 'hint';
+    if (error.status === 422) {
+      const detail = error.detail && typeof error.detail === 'object' ? error.detail : {};
+      const offset = detail.position;
+      note.textContent = `${detail.message || 'The expression has a syntax error'}${syntaxPosition(offset, expression)}.`;
+      $('preview-help').textContent = 'Syntax check failed. Correct the expression and it will be checked again.';
+      previewStatus('Invalid', 'bad');
+    } else {
+      note.textContent = error.message || 'The preview could not be loaded.';
+      $('preview-help').textContent = 'The expression could not be checked right now.';
+      previewStatus('Unavailable', 'bad');
+    }
+    $('preview-content').append(note);
+  } finally {
+    if (sequence === previewSequence) {
+      updateSaveButton();
+      previewController = null;
+    }
+  }
+}
+function loadSources() {
+  const root = $('source-options'); root.replaceChildren();
+  const sources = workspaceStatus?.available_sources || [];
+  if (!sources.length) {
+    const note = document.createElement('span'); note.className = 'hint'; note.textContent = 'No sources are configured in this workspace.';
+    root.append(note); return;
+  }
+  for (const source of sources) {
+    const label = document.createElement('label'); label.className = 'source-option';
+    const input = document.createElement('input'); input.type = 'checkbox'; input.value = source;
+    input.checked = (workspaceStatus.discovery_sources || []).includes(source);
+    input.addEventListener('change', schedulePreview);
+    label.append(input, document.createTextNode(sourceLabel(source))); root.append(label);
+  }
+}
+function setEditorFromQuery(query) {
+  editingQueryId = null;
+  $('expression').value = query?.expression || '';
+  const selected = new Set(query?.enabled_providers?.length ? query.enabled_providers : (workspaceStatus?.discovery_sources || []));
+  for (const input of document.querySelectorAll('#source-options input[type="checkbox"]')) {
+    input.checked = query ? selected.has(input.value) : (workspaceStatus?.discovery_sources || []).includes(input.value);
+  }
+  $('save-context').textContent = query
+    ? 'This expression is loaded from the selected query. Choose Edit query to update it, or save as a new query.'
+    : 'Saved searches are created in the current project.';
+  schedulePreview();
+}
+async function loadQueries({ loadSelection = true } = {}) {
+  const project = $('project').value;
+  if (!project) {
+    setOptions($('query'), [], item => item.expression, 'Create or choose a project first');
+    $('query-selection-note').textContent = 'Choose a project to see saved queries.';
+    $('search').disabled = true; $('due').disabled = true;
+    setEditorFromQuery(null); await loadSchedule(); return;
+  }
+  const queries = await api(`/api/projects/${encodeURIComponent(project)}/queries`);
+  setOptions($('query'), queries, item => item.expression, 'No saved queries yet');
+  const selected = queries.find(item => item.id === $('query').value) || queries[0];
+  $('query').value = selected?.id || '';
+  $('query-selection-note').textContent = selected
+    ? 'The editor is a copy until you choose Edit query. Searches and schedules continue to use the selected saved query.'
+    : 'Build an expression above and save it to create the first query.';
+  if (loadSelection) setEditorFromQuery(selected || null);
+  await loadSchedule();
+}
+async function loadSchedule() {
+  if (!$('query').value) {
+    $('enabled').checked = false; $('interval').value = 60;
+    $('save-schedule').disabled = true; return;
+  }
+  const history = await api(`/api/queries/${encodeURIComponent($('query').value)}/history`);
+  $('enabled').checked = !!history.schedule?.enabled;
+  $('interval').value = history.schedule?.interval_minutes ?? 60;
+  $('save-schedule').disabled = false;
+}
+function friendlyDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+function renderJobs(jobs) {
+  const container = $('jobs'); container.replaceChildren();
+  const list = Array.isArray(jobs) ? jobs : [];
+  $('job-count').textContent = `${list.length} ${list.length === 1 ? 'job' : 'jobs'}`;
+  if (!list.length) {
+    container.append(emptyState('No activity yet', 'Run a saved query or wait for a due schedule.'));
+    return;
+  }
+  for (const job of list) {
+    const card = document.createElement('article'); card.className = 'job';
+    let displayedState = job.state;
+    if (job.state === 'completed' && Array.isArray(job.result) && job.result.length) {
+      const failures = job.result.filter(item => item.error_code || item.state === 'failed' || item.result?.state === 'failed').length;
+      if (failures === job.result.length) displayedState = 'failed';
+      else if (failures || job.result.some(item => item.state === 'partial' || item.result?.state === 'partial')) displayedState = 'partial';
+    }
+    const top = document.createElement('div'); top.className = 'job-top';
+    const titleWrap = document.createElement('div');
+    const title = document.createElement('p'); title.className = 'job-title'; title.textContent = job.kind === 'search' ? 'Literature search' : job.kind === 'sheet_sync' ? 'Google Sheets sync' : 'Scheduled monitoring';
+    const meta = document.createElement('div'); meta.className = 'meta-line';
+    meta.textContent = job.id ? `Job ${String(job.id).slice(0, 8)}` : 'Workspace job';
+    if (job.error_code) meta.append(document.createTextNode(` · ${job.error_code}`));
+    titleWrap.append(title, meta); top.append(titleWrap, pill(displayedState, String(displayedState || '').toLowerCase())); card.append(top);
+    if (Array.isArray(job.result) && job.result.length) {
+      const sources = document.createElement('div'); sources.className = 'job-sources';
+      for (const sourceResult of job.result) {
+        const line = document.createElement('span'); line.className = 'job-source';
+        const result = sourceResult.result || {};
+        const count = result.outcome?.observed ?? result.result_count ?? result.count ?? result.observed ?? null;
+        line.textContent = `${sourceResult.provider || (job.kind === 'monitoring' ? 'Scheduled query' : 'Source')}${count === null ? '' : ` · ${count} results`}${sourceResult.error_code ? ` · ${sourceResult.error_code}` : ` · ${result.state || sourceResult.state || 'completed'}`}`;
+        sources.append(line);
+      }
+      card.append(sources);
+    } else if (job.kind === 'sheet_sync' && job.result) {
+      const note = document.createElement('p'); note.className = 'hint';
+      note.textContent = `${job.result.last_synced_count} papers · Last successful update ${friendlyDate(job.result.last_success_at)}`;
+      card.append(note);
+    } else if (job.state === 'completed') {
+      const metaResult = document.createElement('div'); metaResult.className = 'meta-line';
+      metaResult.textContent = job.result ? 'Completed · open details for the execution record' : 'Completed';
+      card.append(metaResult);
+    }
+    if (job.result) {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Execution details';
+      const pre = document.createElement('pre'); pre.textContent = pretty(job.result);
+      details.append(summary, pre); card.append(details);
+    }
+    container.append(card);
+  }
+}
+function renderPapers(papers) {
+  const container = $('papers'); container.replaceChildren();
+  const list = Array.isArray(papers) ? papers : [];
+  $('paper-count').textContent = `${list.length} ${list.length === 1 ? 'paper' : 'papers'}`;
+  if (!list.length) {
+    container.append(emptyState('No papers in this project yet', 'Papers found by a search will be collected here.'));
+    return;
+  }
+  for (const paper of list) {
+    const card = document.createElement('article'); card.className = 'paper';
+    const title = document.createElement('button'); title.type = 'button'; title.className = 'paper-title'; title.textContent = paper.title || 'Untitled paper';
+    title.addEventListener('click', () => guard(() => openPaper(paper.article_id)));
+    card.append(title);
+    const meta = document.createElement('div'); meta.className = 'meta-line';
+    meta.append(pill(paper.relation?.status || 'unreviewed', String(paper.relation?.status || '').toLowerCase()));
+    if (paper.relation?.is_read) meta.append(document.createTextNode('Read'));
+    card.append(meta);
+    const tags = Array.isArray(paper.tags) ? paper.tags : [];
+    if (tags.length) {
+      const tagList = document.createElement('div'); tagList.className = 'tags';
+      for (const value of tags) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = value; tagList.append(tag); }
+      card.append(tagList);
+    }
+    container.append(card);
+  }
+}
+function detailDate(value) {
+  if (!value) return '—';
+  if (typeof value === 'object') {
+    const parts = [value.year, value.month, value.day].filter(item => item !== null && item !== undefined);
+    return parts.length ? parts.join('-') : pretty(value);
+  }
+  return String(value);
+}
+function addDetailField(label, value, wide = false, extraClass = '') {
+  if (value === null || value === undefined || value === '') return;
+  const field = document.createElement('div'); field.className = `detail-field${wide ? ' wide' : ''}${extraClass ? ` ${extraClass}` : ''}`;
+  const dt = document.createElement('dt'); dt.textContent = label;
+  const dd = document.createElement('dd'); dd.textContent = Array.isArray(value) ? value.join(', ') : String(value);
+  field.append(dt, dd); $('detail-fields').append(field);
+}
+async function openPaper(articleId, { scroll = true } = {}) {
+  const project = $('project').value;
+  if (!project || !articleId) return;
+  const detail = await api(`/api/projects/${encodeURIComponent(project)}/papers/${encodeURIComponent(articleId)}`);
+  lastPaperId = articleId;
+  $('detail-title').textContent = detail.title || 'Paper details';
+  $('detail-fields').replaceChildren();
+  addDetailField('Journal', detail.journal);
+  addDetailField('Publication date', detailDate(detail.publication_date));
+  addDetailField('Review status', detail.project_paper?.relation?.status);
+  addDetailField('Authors', detail.authors, true);
+  addDetailField('Abstract', detail.abstract, true, 'abstract');
+  addDetailField('Publication types', detail.publication_types);
+  addDetailField('Publication status', detail.publication_status);
+  addDetailField('Source providers', detail.source_providers);
+  if (Array.isArray(detail.identifiers) && detail.identifiers.length) {
+    addDetailField('Identifiers', detail.identifiers.map(identifier => typeof identifier === 'string' ? identifier : `${identifier.scheme || identifier.kind || identifier.type || 'ID'}: ${identifier.value || identifier.identifier || ''}`), true);
+  }
+  $('provenance').textContent = pretty({ canonical_metadata: detail.canonical_metadata_provenance || {}, sources: detail.source_metadata || [], citations: detail.citations || [] });
+  const link = $('detail-link');
+  if (typeof detail.publication_url === 'string' && /^https?:\/\//i.test(detail.publication_url)) { link.href = detail.publication_url; link.hidden = false; }
+  else { link.href = '#'; link.hidden = true; }
+  $('paper-panel').hidden = false;
+  if (scroll) $('paper-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function renderRecordGroup(container, records, kind) {
+  container.replaceChildren();
+  const list = Array.isArray(records) ? records : [];
+  if (!list.length) {
+    const empty = document.createElement('p'); empty.className = 'history-empty';
+    empty.textContent = kind === 'attempt' ? 'No execution attempts recorded.' : kind === 'scheduled' ? 'No scheduled executions recorded.' : 'No coverage checkpoints saved.';
+    container.append(empty); return;
+  }
+  for (const item of list.slice(0, 8)) {
+    const card = document.createElement('article'); card.className = 'record';
+    const top = document.createElement('div'); top.className = 'record-top';
+    const title = document.createElement('span'); title.className = 'record-title';
+    title.textContent = item.provider || item.requested_provider || item.lane || item.state || (kind === 'coverage' ? 'Coverage' : 'Execution');
+    const stateValue = item.state || (item.complete ? 'complete' : null) || (kind === 'coverage' ? 'in progress' : 'recorded');
+    top.append(title, pill(stateValue, String(stateValue).toLowerCase())); card.append(top);
+    const meta = document.createElement('div'); meta.className = 'meta-line';
+    const date = item.started_at || item.last_completed_at || item.next_due_at || item.ended_at;
+    const bits = [];
+    if (date) bits.push(friendlyDate(date));
+    if (item.result_count !== undefined) bits.push(`${item.result_count} results`);
+    if (item.error_code) bits.push(`Error: ${item.error_code}`);
+    if (item.cursor) bits.push(`Cursor: ${item.cursor}`);
+    if (item.complete !== undefined) bits.push(item.complete ? 'Checkpoint complete' : 'Checkpoint partial');
+    meta.textContent = bits.join(' · ') || 'No additional run details'; card.append(meta);
+  }
+}
+async function loadHistory(queryId) {
+  if (!queryId) {
+    makeTable($('runs'), ['Source', 'State', 'Started', 'Results', 'New', 'Updated', 'Issue'], [], 'Select a saved query', 'Provider runs will appear here.');
+    renderRecordGroup($('attempts'), [], 'attempt'); renderRecordGroup($('scheduled'), [], 'scheduled'); renderRecordGroup($('coverage'), [], 'coverage');
+    $('history-json').textContent = 'Select a query to view the records.'; return;
+  }
+  const history = await api(`/api/queries/${encodeURIComponent(queryId)}/history`);
+  const runs = Array.isArray(history.runs) ? history.runs : [];
+  makeTable($('runs'), ['Source', 'State', 'Started', 'Results', 'New', 'Updated', 'Issue'], runs.map(run => [run.provider, run.state, friendlyDate(run.started_at), run.result_count, run.new_count, run.updated_count, run.error_code || '—']), 'No provider runs yet', 'Run this query to see source by source outcomes.');
+  renderRecordGroup($('attempts'), history.attempts, 'attempt');
+  renderRecordGroup($('scheduled'), history.scheduled_executions, 'scheduled');
+  renderRecordGroup($('coverage'), history.coverage, 'coverage');
+  $('history-json').textContent = pretty({ attempts: history.attempts, scheduled_executions: history.scheduled_executions, coverage: history.coverage });
+}
+async function refresh({ quiet = false } = {}) {
+  if (refreshing) return;
+  refreshing = true;
+  try {
+    const jobs = await api('/api/jobs');
+    renderJobs(jobs);
+    const running = Array.isArray(jobs) && jobs.some(job => job.state === 'running');
+    $('search').disabled = running || !$('query').value;
+    $('due').disabled = running;
+    const project = $('project').value;
+    await loadSheet({ preserveInput: true });
+    if (project) renderPapers(await api(`/api/projects/${encodeURIComponent(project)}/papers`));
+    else renderPapers([]);
+    await loadHistory($('query').value);
+    if (lastPaperId && $('paper-panel').hidden === false && project) {
+      try { await openPaper(lastPaperId, { scroll: false }); } catch (_) { lastPaperId = null; $('paper-panel').hidden = true; }
+    }
+    $('connection-label').textContent = 'Workspace connected';
+  } catch (error) {
+    $('connection-label').textContent = 'Workspace unavailable';
+    if (!quiet) setMessage(error.message, 'error');
+  } finally { refreshing = false; }
+}
+async function loadSheet({ preserveInput = false } = {}) {
+  const project = $('project').value;
+  $('save-sheet').disabled = !project;
+  if (!project) {
+    $('sheet-url').value = '';
+    $('sync-sheet').disabled = true;
+    $('sheet-status').textContent = 'Create or select a project first.';
+    return;
+  }
+  const link = await api(`/api/projects/${encodeURIComponent(project)}/sheet`);
+  if (!preserveInput || document.activeElement !== $('sheet-url')) $('sheet-url').value = link?.spreadsheet_id || '';
+  if (!preserveInput || document.activeElement !== $('sheet-auto')) $('sheet-auto').checked = link?.enabled ?? true;
+  $('sync-sheet').disabled = !link;
+  $('sheet-status').textContent = link
+    ? `Last successful update: ${friendlyDate(link.last_success_at)} · ${link.last_synced_count} papers${link.last_error_code ? ` · Last sync issue: ${link.last_error_code}` : ''} · Automatic sync: ${link.enabled ? 'on' : 'off'}`
+    : 'No Sheet connected yet. Save a URL, then Sync now to test access.';
+}
+function insertAtCursor(value) {
+  const field = $('expression');
+  field.focus();
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? start;
+  field.setRangeText(value, start, end, 'end');
+  if (value === '""') field.setSelectionRange(start + 1, start + 1);
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+$('project-form').addEventListener('submit', event => {
+  event.preventDefault();
+  guard(async () => {
+    const project = await api('/api/projects', 'POST', { name: $('project-name').value.trim() });
+    const projects = await api('/api/projects');
+    setOptions($('project'), projects, item => item.name, 'Create a project first');
+    $('project').value = project.id;
+    $('project-name').value = '';
+    await loadQueries();
+    await refresh();
+  });
+});
+$('sheet-form').addEventListener('submit', event => {
+  event.preventDefault();
+  guard(async () => {
+    const project = $('project').value;
+    if (!project) throw new Error('Select a project first.');
+    await api(`/api/projects/${encodeURIComponent(project)}/sheet`, 'PUT', {
+      url: $('sheet-url').value.trim(), enabled: $('sheet-auto').checked
+    });
+    await loadSheet();
+    setMessage('Google Sheet connection saved. Use Sync now to check access.', 'success');
+  });
+});
+$('sync-sheet').addEventListener('click', () => guard(async () => {
+  const project = $('project').value;
+  if (!project) throw new Error('Select a project first.');
+  await api(`/api/projects/${encodeURIComponent(project)}/sheet/sync`, 'POST');
+  await refresh();
+  setMessage('Google Sheets sync started. Refresh to see its result.', 'info');
+}));
+$('query-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if ($('save-query').disabled) return;
+  guard(async () => {
+    const body = { expression: $('expression').value.trim(), providers: checkedProviders() };
+    const wasEditing = Boolean(editingQueryId);
+    const targetId = editingQueryId;
+    let query;
+    if (wasEditing) {
+      query = await api(`/api/queries/${encodeURIComponent(targetId)}`, 'PUT', body);
+      await loadQueries({ loadSelection: false });
+      $('query').value = targetId;
+      $('query-selection-note').textContent = 'Saved query updated. Its existing history and schedule remain attached.';
+      const refreshed = await api(`/api/projects/${encodeURIComponent($('project').value)}/queries`);
+      editingQueryId = null;
+      setEditorFromQuery(refreshed.find(item => item.id === targetId) || query);
+    } else {
+      query = await api(`/api/projects/${encodeURIComponent($('project').value)}/queries`, 'POST', body);
+      await loadQueries({ loadSelection: false });
+      $('query').value = query.id;
+      $('query-selection-note').textContent = 'New saved query created. Run it now or configure its schedule.';
+    }
+    await loadSchedule();
+    $('search').disabled = false;
+    await refresh();
+    setMessage(wasEditing ? 'Saved query updated.' : 'Saved query created.', 'success');
+  });
+});
+$('project').addEventListener('change', () => guard(async () => { lastPaperId = null; $('paper-panel').hidden = true; await loadQueries(); await refresh(); }));
+$('query').addEventListener('change', () => guard(async () => {
+  const queries = $('project').value ? await api(`/api/projects/${encodeURIComponent($('project').value)}/queries`) : [];
+  const query = queries.find(item => item.id === $('query').value) || null;
+  editingQueryId = null;
+  setEditorFromQuery(query); await loadSchedule(); await refresh();
+}));
+$('edit-query').addEventListener('click', () => {
+  if (!$('query').value) return;
+  editingQueryId = $('query').value;
+  $('save-context').textContent = 'Editing the selected saved query. Saving updates this query and keeps its history and schedule.';
+  updateSaveButton();
+  $('expression').focus();
+});
+$('cancel-edit').addEventListener('click', () => guard(async () => {
+  editingQueryId = null;
+  const queries = $('project').value ? await api(`/api/projects/${encodeURIComponent($('project').value)}/queries`) : [];
+  setEditorFromQuery(queries.find(item => item.id === $('query').value) || null);
+}));
+$('expression').addEventListener('input', schedulePreview);
+document.querySelectorAll('[data-insert]').forEach(button => button.addEventListener('click', () => insertAtCursor(button.dataset.insert)));
+$('search').addEventListener('click', () => guard(async () => {
+  if (!$('query').value) throw new Error('Choose or create a saved query first.');
+  const pageBudget = Number($('pages').value);
+  if (!Number.isInteger(pageBudget) || pageBudget < 1 || pageBudget > 100) throw new Error('Page budget must be from 1 to 100.');
+  await api(`/api/queries/${encodeURIComponent($('query').value)}/search`, 'POST', { max_pages: pageBudget });
+  await refresh();
+}));
+$('schedule-form').addEventListener('submit', event => {
+  event.preventDefault();
+  guard(async () => {
+    if (!$('query').value) throw new Error('Choose a saved query before configuring a schedule.');
+    const interval = Number($('interval').value);
+    if (!Number.isInteger(interval) || interval < 1 || interval > 43200) throw new Error('Interval must be from 1 to 43,200 minutes.');
+    await api(`/api/queries/${encodeURIComponent($('query').value)}/schedule`, 'PUT', { enabled: $('enabled').checked, interval_minutes: interval });
+    await refresh();
+    setMessage('Schedule saved.', 'success');
+  });
+});
+$('due').addEventListener('click', () => guard(async () => { await api('/api/monitoring/run-due', 'POST'); await refresh(); }));
+$('refresh').addEventListener('click', () => guard(() => refresh()));
+$('close-detail').addEventListener('click', () => { $('paper-panel').hidden = true; lastPaperId = null; });
+
+guard(async () => {
+  workspaceStatus = await api('/api/status');
+  loadSources();
+  const monitorEnabled = !!workspaceStatus.monitoring_enabled;
+  $('monitor-state').textContent = monitorEnabled ? 'Active' : 'Paused';
+  $('monitor-note').textContent = monitorEnabled
+    ? `Checks due schedules every ${workspaceStatus.poll_seconds} seconds; source searches follow saved intervals · Sources: ${(workspaceStatus.monitoring_sources || []).join(', ') || 'none configured'}`
+    : 'Restart with --monitor to enable automatic polling.';
+  if (!monitorEnabled) $('monitor-dot').style.background = '#c9a261';
+  const projects = await api('/api/projects');
+  setOptions($('project'), projects, item => item.name, 'Create your first project');
+  $('project').value = projects[0]?.id || '';
+  await loadQueries();
+  await refresh();
+  setInterval(() => refresh({ quiet: true }), 60 * 1000);
+});
+</script>
+</body>
+</html>

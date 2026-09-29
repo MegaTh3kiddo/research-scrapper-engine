@@ -1,0 +1,1 @@
+"""Isolated literature source adapters."""

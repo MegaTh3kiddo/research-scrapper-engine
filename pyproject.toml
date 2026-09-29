@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-scrapper-engine"
+version = "0.1.4"
+description = "Reusable foundation for medical literature intelligence"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "SQLAlchemy>=2.0,<3.0",
+  "alembic>=1.13,<2.0",
+  "httpx[socks]>=0.28.1,<1.0",
+  "defusedxml>=0.7,<1.0",
+]
+
+[project.optional-dependencies]
+desktop = ["PySide6>=6.7,<7"]
+web = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1"]
+sheets = ["google-auth[requests]>=2.20,<3", "requests[socks]>=2.31,<3"]
+postgres = ["psycopg[binary]>=3.1,<4"]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.23,<2.0"]
+
+[project.scripts]
+research-engine-desktop = "research_engine.desktop.main:main"
+research-engine-recover = "research_engine.recovery_cli:main"
+research-engine-web = "research_engine.web.main:main"
+
+[tool.setuptools.package-data]
+"research_engine.web" = ["*.html"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.data-files]
+"share/research-scrapper-engine" = ["alembic.ini"]
+"share/research-scrapper-engine/migrations" = ["migrations/env.py", "migrations/script.py.mako"]
+"share/research-scrapper-engine/migrations/versions" = ["migrations/versions/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

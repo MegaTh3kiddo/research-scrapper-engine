@@ -1,0 +1,42 @@
+# Python build and cache files
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Local environments and secrets
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*service-account*.json
+*credentials*.json
+
+# Local databases, snapshots, and generated exports
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+data/
+exports/
+snapshots/
+web-pilot/
+.research-scrapper-engine/
+*.log
+application-settings.json
+network-settings.json
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

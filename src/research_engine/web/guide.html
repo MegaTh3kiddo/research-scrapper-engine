@@ -1,0 +1,107 @@
+<section id="help-guide" class="card wide-card" style="margin-top:18px" aria-labelledby="guide-heading">
+  <div class="card-head"><div><h2 id="guide-heading">Help / Guide</h2><p>Start a workspace, then build a repeatable literature-review routine.</p></div></div>
+  <div class="card-body guide-content">
+    <p>This is a local, single-user application. The browser handles projects, searches, schedules, history, and paper inspection. Use the desktop client for settings, review changes, tags, exports, and recovery. Both clients share the application services and can use the same local data directory; there is no automatic cross-device sync.</p>
+    <details id="guide-setup">
+      <summary>First-Time Setup — install, connect, and run your first search</summary>
+      <h3>1. Install and launch</h3>
+      <p>Open a terminal in the repository folder. Skip virtual-environment creation if <code>.venv</code> already exists. Choose your operating system's commands:</p>
+      <p>Linux / macOS (Bash)</p>
+      <pre><code>python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[web]'
+.venv/bin/python -m research_engine.web.main --monitor</code></pre>
+      <p>Windows (PowerShell)</p>
+      <pre><code>py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[web]"
+.\.venv\Scripts\python.exe -m research_engine.web.main --monitor</code></pre>
+      <p>Open <a href="http://127.0.0.1:8000">http://127.0.0.1:8000</a>. Keep the terminal running; use Ctrl+C to stop and allow active work to shut down. Do not use Windows executable paths in a Linux terminal.</p>
+      <p>Startup creates the database and applies migrations. The default workspace is <code>.research-scrapper-engine</code> in your home directory. Append <code>--data-dir ./web-pilot</code> for a separate trial, or <code>--port 8001</code> for a different port. An existing <code>DATABASE_URL</code> overrides the database location even with <code>--data-dir</code>. Keep the default localhost binding: this release has no public-hosting login system.</p>
+      <p>If reusing data collected with version 0.1.0, rebuild or audit it before relying on it. Upgrading does not repair historical PubMed identity errors; follow <code>docs/DATA_INTEGRITY_REMEDIATION.md</code>.</p>
+      <h3>2. Choose sources and connection settings</h3>
+      <p>Start with PubMed and Europe PMC. OpenAlex and Crossref are also supported. The browser's source checkboxes select sources for a query; a source must also be allowed by saved discovery settings.</p>
+      <p>For settings, stop this server and open the desktop client on the same data directory. Install the desktop extra and launch:</p>
+      <p>Linux / macOS</p>
+      <pre><code>.venv/bin/python -m pip install -e '.[desktop]'
+.venv/bin/research-engine-desktop</code></pre>
+      <p>Windows PowerShell</p>
+      <pre><code>.\.venv\Scripts\python.exe -m pip install -e ".[desktop]"
+.\.venv\Scripts\research-engine-desktop.exe</code></pre>
+      <ul>
+        <li><strong>Settings → Sources:</strong> choose defaults for new queries and sources allowed during monitoring. Edit existing queries separately to change their saved sources.</li>
+        <li><strong>API access:</strong> configure contact email and optional keys. Set <code>NCBI_API_KEY</code> or <code>OPENALEX_API_KEY</code> in the environment before starting the web process when needed. Desktop session keys are neither saved to disk nor shared with a separate web process.</li>
+        <li><strong>Network:</strong> enable a reachable HTTP/SOCKS5/SOCKS5H proxy explicitly, or leave it disabled for direct requests. Proxy URLs with embedded credentials are not supported. A 403 error does not automatically enable a proxy.</li>
+        <li><strong>Workflow:</strong> choose default result/page budgets, monitoring interval, and whether exports include excluded papers.</li>
+      </ul>
+      <p>Restart the browser server after settings changes. If the browser used <code>--data-dir ./web-pilot</code>, set <code>RESEARCH_ENGINE_DATA_DIR</code> to that same directory before starting desktop: <code>export RESEARCH_ENGINE_DATA_DIR="$PWD/web-pilot"</code> in Bash, or <code>$env:RESEARCH_ENGINE_DATA_DIR = "$PWD/web-pilot"</code> in PowerShell. Check <code>DATABASE_URL</code> as well if set. Do not run desktop and web schedulers simultaneously against the same workspace.</p>
+      <h3>3. Create a research project</h3>
+      <p>In <strong>Project workspace</strong>, create and select a project such as “Breast cancer immunotherapy.” It groups your saved queries and collected papers. Separate projects can represent separate research questions.</p>
+      <h3>4. Build and save a query</h3>
+      <pre><code>("breast cancer" OR "triple negative breast cancer") AND immunotherapy NOT mice</code></pre>
+      <p>Enter the expression, select sources, and wait for a valid <strong>Expression preview</strong>. Read each source's translation and notices, then save. <strong>Save as new query</strong> creates a separate query; <strong>Edit query → Save changes</strong> updates the selected one and retains its history.</p>
+      <p>The editor is a draft until saved. Runs and schedules use the selected saved query, not unsaved text. Set advanced date/language/publication filters in the desktop query editor; browser edits retain existing filters.</p>
+      <h3>5. Run and inspect</h3>
+      <p>Select the saved query and choose <strong>Run search</strong>. Start with a small <strong>Pages per source</strong> budget. Check Recent activity and Query history &amp; monitoring, then open a paper title to inspect metadata and provenance. <strong>Open publication page</strong> opens an external page; access depends on that site. No PDFs are downloaded.</p>
+      <p>Check partial/failed source outcomes before interpreting the result count. A bounded search is not an exhaustive literature review.</p>
+      <h3>6. Enable monitoring</h3>
+      <p>Select the saved query, enable its schedule, set the interval in minutes, and choose <strong>Save schedule</strong>. New schedules default to <strong>60 minutes (1 hour)</strong> between source API searches. Existing schedules retain their saved interval; change it to 60 and save for hourly searches. Automatic polling requires the server's <code>--monitor</code> option and allowed monitoring sources. The next run becomes due after the interval.</p>
+      <p><strong>Run due</strong> executes due queries across projects, not every query immediately. Use Run search for immediate execution. Closing the browser tab does not stop the server; stopping the server stops monitoring.</p>
+    </details>
+    <details id="guide-workflow">
+      <summary>Ongoing Workflow — monitor, track duplicates, review, and export</summary>
+      <h3>1. Refine Boolean expressions</h3>
+      <ul>
+        <li><code>cancer AND immunotherapy</code>: require both terms.</li>
+        <li><code>Alzheimer OR dementia</code>: accept alternatives.</li>
+        <li><code>cancer NOT mice</code>: exclude a term.</li>
+        <li><code>(Alzheimer OR dementia) AND "artificial intelligence"</code>: group alternatives and require a phrase.</li>
+      </ul>
+      <p>Operators are case-insensitive outside quotes. Precedence is NOT, then AND, then OR. Adjacent words imply AND: use <code>"breast cancer"</code> for a phrase. <code>NOT alpha beta</code> means <code>(NOT alpha) AND beta</code>; use <code>NOT "alpha beta"</code> or <code>NOT (alpha OR beta)</code> for different exclusions.</p>
+      <p>Incomplete quotes, parentheses, or operators prevent saving. Provider-specific field tags, wildcards, and proximity syntax are not portable query syntax. Always inspect the preview after editing.</p>
+      <p>PubMed, Europe PMC, and OpenAlex receive source-specific Boolean translations. Crossref retrieves candidates and filters their available title/abstract/subject metadata. Missing metadata, source indexing, and bounded page budgets affect recall; NOT means absent from available metadata, not proof of clinical irrelevance. Equivalent queries can return different papers across sources. Prefer a positive topic clause to a negative-only query.</p>
+      <h3>2. Understand the records and duplicate tracking</h3>
+      <p>A project contains saved queries and links to shared canonical papers. Query revisions, attempts, and provider runs preserve search history. Paper observations link to source identifiers and immutable raw responses. Review state and tags belong to the project-paper link, not the shared paper.</p>
+      <p>DOI, PMID, PMCID, and provider identifiers identify known records. The same paper found through multiple queries or sources normally appears once in a project's library, with each source observation retained. Similar titles or conflicting identifiers are flagged rather than silently merged. Use desktop <strong>Identity review…</strong> for available decisions.</p>
+      <ul>
+        <li><strong>Newly discovered:</strong> first encountered by this installation—even if published years ago.</li>
+        <li><strong>Newly published:</strong> within the publication-recency window; it may already be known.</li>
+        <li><strong>Updated metadata:</strong> a known paper changed, not a new paper.</li>
+        <li><strong>Seen again:</strong> more search/source evidence for an existing record.</li>
+      </ul>
+      <p>Run “New” counts concern newly discovered canonical records, not necessarily every paper newly visible in this project. Citation counts are source-specific, not summed. Zero new papers can still mean known papers were found or updated.</p>
+      <h3>3. Check monitoring and history</h3>
+      <p>Activity, papers, and history refresh automatically once per minute; use <strong>Refresh now</strong> for an immediate check, including after a running search finishes. Recent activity scrolls within one viewport's maximum height. Browser refresh reads local results, not literature APIs. The server checks due schedules every minute by default; source APIs are searched for due enabled queries (hourly by default for new schedules) or manual searches. Inspect provider runs, execution attempts, scheduled executions, and coverage checkpoints, not only the latest activity message.</p>
+      <ul>
+        <li><strong>Completed:</strong> finished within the recorded execution's scope.</li>
+        <li><strong>Partial:</strong> work/coverage remains, such as a page-budget limit or a failed source alongside successful sources.</li>
+        <li><strong>Failed:</strong> inspect the issue; it is not evidence that no papers match.</li>
+        <li><strong>Running / skipped:</strong> wait for active work or inspect why an attempt was not executed.</li>
+      </ul>
+      <p>Monitoring combines recent-publication checks with continuing full-query coverage. Saved cursors continue bounded campaigns on later scheduled runs; overlapping recent windows help revisit late-indexed or changed records. Your date filters still apply. Source limits and changing indexes prevent an exhaustive-coverage guarantee.</p>
+      <p>Keep only one scheduler process for a workspace. After a crash, stop remaining workers before using desktop <strong>Recovery…</strong>. Recovery is explicit; do not assume every interrupted attempt resumed. Recent activity jobs are temporary, but stored run history survives restarts. There are no email/push alerts yet.</p>
+      <h3>4. Review papers and organize tags</h3>
+      <p>Use the desktop client to change these values; the browser currently displays them only.</p>
+      <ul>
+        <li><strong>Mark read:</strong> marks read and clears an important/excluded decision.</li>
+        <li><strong>Mark important:</strong> marks important without automatically marking read; an existing read timestamp remains.</li>
+        <li><strong>Exclude:</strong> retains the paper and evidence, flags it excluded in this project, and preserves an existing read timestamp.</li>
+        <li><strong>Reset to unread:</strong> clears the read timestamp and the important/excluded decision.</li>
+      </ul>
+      <p>The displayed status prioritizes important/excluded; a paper can be important and already read. Use review/read filters and <strong>Show excluded</strong>. Select a paper and use project tag controls to add or remove tags. Other projects' reviews/tags are unaffected.</p>
+      <h3>5. Export and back up</h3>
+      <p>Select the project in the desktop client and choose <strong>Export CSV</strong> or <strong>Export RIS</strong>. CSV suits spreadsheets; RIS suits reference managers. Exports include canonical metadata and project review/tag context where supported. Some reference managers ignore RIS notes. Excluded papers are included by default; change this in Settings if needed.</p>
+      <p>Exports are not backups: queries, full history, and raw snapshots are not preserved. For local SQLite, stop all clients/workers and copy the complete data directory, including the database, snapshots, and settings. Restore into a clean directory, launch using that directory, and verify projects, papers, queries, and history. Environment API keys are not in backups. Custom database locations and PostgreSQL need the separate installation/backup instructions.</p>
+      <h3>6. Resolve common issues</h3>
+      <p>Optionally use the browser's <strong>Google Sheets sync</strong> card to connect a Sheet to this project. Set the service-account JSON file path on the server, share the Sheet with that account as Editor, and choose <strong>Sync now</strong> for the first upload. Enabled links sync after scheduled searches. The separate app-managed tab displays <strong>Last successful update (UTC)</strong>, and local status shows the last success or a safe error code. Manual searches need a manual sync. This is a one-way projection, not a backup or import; see <code>docs/GOOGLE_SHEETS.md</code> for setup.</p>
+      <ul>
+        <li><strong>Browser unavailable:</strong> check the server terminal and localhost port.</li>
+        <li><strong>Cannot save:</strong> select a project and allowed sources, then fix preview errors.</li>
+        <li><strong>Source disabled:</strong> check desktop discovery settings and saved query sources.</li>
+        <li><strong>No scheduled updates:</strong> check <code>--monitor</code>, schedule enabled state, due time, and monitoring allow-list. Run due does not force a future-due query.</li>
+        <li><strong>403/authentication/quota error:</strong> inspect run details, credentials, service limits, and explicitly configured reachable proxy if appropriate.</li>
+        <li><strong>Empty results:</strong> check filters, expression, provider outcomes, and page budget before concluding no papers match.</li>
+        <li><strong>Empty workspace after restart:</strong> check the data directory and <code>DATABASE_URL</code>.</li>
+      </ul>
+      <p>For the full repository guide, open <code>docs/USER_GUIDE.md</code>. See <code>docs/BOOLEAN_SEARCH.md</code> for syntax details and <code>docs/INSTALLATION.md</code> for recovery/backup instructions. AI analysis, PDFs, analytics, and remote multi-user hosting are not included in this release.</p>
+    </details>
+  </div>
+</section>
